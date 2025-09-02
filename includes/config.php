@@ -1,9 +1,9 @@
 <?php
 // Database connection
 $host = 'localhost';
-$db   = 'my_camp_portal_db';
 $user = 'root';
 $pass = ''; 
+$db   = 'my_camp_portal_db';
 
 $conn = new mysqli($host, $user, $pass, $db);
 
