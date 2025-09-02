@@ -1,0 +1,10 @@
+ALTER TABLE submissions
+ADD COLUMN grade VARCHAR(10),
+ADD COLUMN feedback TEXT,
+ADD COLUMN graded_at DATETIME;
+
+
+ALTER TABLE submissions 
+ADD COLUMN grade VARCHAR(10),
+ADD COLUMN feedback TEXT,
+ADD COLUMN graded_at TIMESTAMP NULL;
