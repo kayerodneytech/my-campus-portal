@@ -1,9 +1,9 @@
 <?php
 // Database connection
 $host = 'localhost';
-$db   = 'chat_portal';
+$db   = 'my_camp_portal_db';
 $user = 'root';
-$pass = ''; // Use your DB password
+$pass = ''; 
 
 $conn = new mysqli($host, $user, $pass, $db);
 
