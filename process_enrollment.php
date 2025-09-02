@@ -16,8 +16,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $input = json_decode(file_get_contents('php://input'), true);
-
-// Validate required fields
+        
+        // Validate required fields
 $required_fields = ['first_name', 'last_name', 'email', 'phone', 'password', 'confirm_password', 'course_of_interest'];
 foreach ($required_fields as $field) {
     if (empty($input[$field])) {
@@ -29,10 +29,10 @@ foreach ($required_fields as $field) {
 // Validate password confirmation
 if ($input['password'] !== $input['confirm_password']) {
     echo json_encode(['success' => false, 'message' => 'Passwords do not match']);
-    exit;
-}
-
-// Validate email format
+            exit;
+        }
+        
+        // Validate email format
 if (!filter_var($input['email'], FILTER_VALIDATE_EMAIL)) {
     echo json_encode(['success' => false, 'message' => 'Invalid email format']);
     exit;
@@ -41,22 +41,22 @@ if (!filter_var($input['email'], FILTER_VALIDATE_EMAIL)) {
 // Validate password strength
 if (strlen($input['password']) < 6) {
     echo json_encode(['success' => false, 'message' => 'Password must be at least 6 characters long']);
-    exit;
-}
-
+            exit;
+        }
+        
 try {
-    // Check if email already exists
-    $check_stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
+        // Check if email already exists
+        $check_stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
     $check_stmt->bind_param("s", $input['email']);
-    $check_stmt->execute();
+        $check_stmt->execute();
     $check_result = $check_stmt->get_result();
-    
+        
     if ($check_result->num_rows > 0) {
         echo json_encode(['success' => false, 'message' => 'An account with this email already exists']);
-        exit;
-    }
-    $check_stmt->close();
-    
+            exit;
+        }
+        $check_stmt->close();
+        
     // Start transaction
     $conn->begin_transaction();
     
@@ -100,16 +100,16 @@ try {
     // Commit transaction
     $conn->commit();
     
-    echo json_encode([
-        'success' => true,
+            echo json_encode([
+                'success' => true, 
         'message' => 'Application submitted successfully! Your application number is ' . $application_number . '. Please check your email for further instructions.',
         'application_number' => $application_number
-    ]);
-    
-} catch (Exception $e) {
+            ]);
+        
+    } catch (Exception $e) {
     // Rollback transaction on error
     $conn->rollback();
-    error_log("Enrollment error: " . $e->getMessage());
+        error_log("Enrollment error: " . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'An error occurred while processing your application. Please try again.']);
 }
 

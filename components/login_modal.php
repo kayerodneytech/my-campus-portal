@@ -70,7 +70,7 @@
 
                     <div class="flex items-center justify-between">
                         <label class="flex items-center">
-                            <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <input type="checkbox" name="remember_me" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                             <span class="ml-2 text-sm text-gray-600">Remember me</span>
                         </label>
                         <a href="#" class="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200">
@@ -170,16 +170,15 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     errorDiv.classList.add('hidden');
     
     const formData = new FormData(this);
-    const email = formData.get('email');
-    const password = formData.get('password');
+    const data = Object.fromEntries(formData);
     
     try {
-        const response = await fetch('process_login.php', {
+        const response = await fetch('includes/async/process_login.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify(data)
         });
         
         const result = await response.json();

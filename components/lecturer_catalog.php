@@ -6,7 +6,7 @@
  */
 
 // Include database connection
-require_once '../includes/config.php';
+require_once './includes/config.php';
 
 // Fetch lecturer data from database
 $lecturers = [];
@@ -50,20 +50,31 @@ try {
     </h3>
     
     <div class="space-y-4">
-        <?php foreach ($lecturers as $lecturer): ?>
-        <div class="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-            <div class="flex-1">
-                <div class="font-semibold text-gray-800">
-                    <?php echo htmlspecialchars($lecturer['name']); ?>
+        <?php if (!empty($lecturers)): ?>
+            <?php foreach ($lecturers as $lecturer): ?>
+            <div class="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                <div class="flex-1">
+                    <div class="font-semibold text-gray-800">
+                        <?php echo htmlspecialchars($lecturer['name']); ?>
+                    </div>
+                    <div class="text-sm text-gray-600">
+                        <?php echo htmlspecialchars($lecturer['subject']); ?>
+                    </div>
                 </div>
-                <div class="text-sm text-gray-600">
-                    <?php echo htmlspecialchars($lecturer['subject']); ?>
+                <div class="text-sm text-blue-600 font-medium">
+                    <?php echo htmlspecialchars($lecturer['department']); ?>
                 </div>
             </div>
-            <div class="text-sm text-blue-600 font-medium">
-                <?php echo htmlspecialchars($lecturer['department']); ?>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="text-center py-8">
+                <div class="text-4xl text-gray-300 mb-4">
+                    <i class="fas fa-user-graduate"></i>
+                    <span class="fa-fallback" style="display: none;">👨‍🏫</span>
+                </div>
+                <h3 class="text-lg font-medium text-gray-600 mb-2">No Lecturers Listed</h3>
+                <p class="text-gray-500">Lecturer information will be available soon.</p>
             </div>
-        </div>
-        <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 </div>

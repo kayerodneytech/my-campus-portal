@@ -1,12 +1,34 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const mainContentArea = document.getElementById('main-content-area');
-
-    // --- Menu Item Handlers ---
-    const welcomeBoardLink = document.getElementById('welcome-board-link');
-    const studentLoginLink = document.getElementById('student-login-link');
-    const applyNowLink = document.getElementById('apply-now-link'); // New ID for Apply Now/Enroll
-    const coursesOfferedLink = document.getElementById('courses-offered-link'); // New ID for Courses Offered
-    const staffCatalogLink = document.getElementById('staff-catalog-link'); // New ID for Staff Catalog
+    // Fix navigation - prevent default behavior for menu items that have onclick handlers
+    document.querySelectorAll('.menu-item').forEach(link => {
+        link.addEventListener('click', function(e) {
+            // If the link has an onclick attribute, don't prevent default
+            if (this.getAttribute('onclick')) {
+                return; // Let the onclick handler work
+            }
+            
+            // For other links, prevent default and show a message
+            e.preventDefault();
+            const linkText = this.textContent.trim();
+            
+            // Show appropriate message based on the link
+            if (linkText.includes('Welcome Board')) {
+                // Already on welcome board, do nothing
+                return;
+            } else if (linkText.includes('Student Login')) {
+                if (typeof openLoginModal === 'function') {
+                    openLoginModal();
+                }
+            } else if (linkText.includes('Apply Now')) {
+                if (typeof openRegisterModal === 'function') {
+                    openRegisterModal();
+                }
+            } else {
+                // For other menu items, show a coming soon message
+                alert(`${linkText} feature is coming soon! This section is under development.`);
+            }
+        });
+    });
 
     // Function to set active menu item
     function setActiveMenuItem(clickedLink) {

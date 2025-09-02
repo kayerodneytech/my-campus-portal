@@ -6,7 +6,7 @@
  */
 
 // Include database connection
-require_once '../includes/config.php';
+require_once './includes/config.php';
 
 // Fetch student organizations from database
 $organizations = [];
@@ -49,15 +49,26 @@ try {
     </h3>
     
     <div class="space-y-3">
-        <?php foreach ($organizations as $org): ?>
-        <a href="javascript:void(0)" 
-           id="<?php echo htmlspecialchars($org['id']); ?>" 
-           class="menu-item-link block w-full py-3 px-4 bg-gray-50 rounded-lg hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-all duration-200 text-gray-700 hover:text-blue-700">
-            <div class="flex items-center justify-between">
-                <span class="font-medium"><?php echo htmlspecialchars($org['name']); ?></span>
-                <span class="text-blue-500">→</span>
+        <?php if (!empty($organizations)): ?>
+            <?php foreach ($organizations as $org): ?>
+            <a href="javascript:void(0)" 
+               id="<?php echo htmlspecialchars($org['id']); ?>" 
+               class="menu-item-link block w-full py-3 px-4 bg-gray-50 rounded-lg hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-all duration-200 text-gray-700 hover:text-blue-700">
+                <div class="flex items-center justify-between">
+                    <span class="font-medium"><?php echo htmlspecialchars($org['name']); ?></span>
+                    <span class="text-blue-500">→</span>
+                </div>
+            </a>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="text-center py-8">
+                <div class="text-4xl text-gray-300 mb-4">
+                    <i class="fas fa-users"></i>
+                    <span class="fa-fallback" style="display: none;">🎯</span>
+                </div>
+                <h3 class="text-lg font-medium text-gray-600 mb-2">No Organizations Listed</h3>
+                <p class="text-gray-500">Student organization information will be available soon.</p>
             </div>
-        </a>
-        <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 </div>

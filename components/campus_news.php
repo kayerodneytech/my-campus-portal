@@ -6,7 +6,7 @@
  */
 
 // Include database connection
-require_once '../includes/config.php';
+require_once './includes/config.php';
 
 // Fetch campus news from database (announcements table)
 $campus_news = [];
@@ -53,18 +53,29 @@ try {
     </h2>
     
     <div class="space-y-6">
-        <?php foreach ($campus_news as $news_item): ?>
-        <div class="border-l-4 border-blue-500 pl-4 py-2 hover:bg-gray-50 transition-colors duration-200">
-            <div class="font-semibold text-gray-800 text-lg mb-1">
-                <?php echo htmlspecialchars($news_item['title']); ?>
+        <?php if (!empty($campus_news)): ?>
+            <?php foreach ($campus_news as $news_item): ?>
+            <div class="border-l-4 border-blue-500 pl-4 py-2 hover:bg-gray-50 transition-colors duration-200">
+                <div class="font-semibold text-gray-800 text-lg mb-1">
+                    <?php echo htmlspecialchars($news_item['title']); ?>
+                </div>
+                <div class="text-sm text-gray-500 mb-2">
+                    <?php echo htmlspecialchars($news_item['date']); ?>
+                </div>
+                <div class="text-gray-600 leading-relaxed">
+                    <?php echo htmlspecialchars($news_item['summary']); ?>
+                </div>
             </div>
-            <div class="text-sm text-gray-500 mb-2">
-                <?php echo htmlspecialchars($news_item['date']); ?>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="text-center py-8">
+                <div class="text-4xl text-gray-300 mb-4">
+                    <i class="fas fa-newspaper"></i>
+                    <span class="fa-fallback" style="display: none;">📰</span>
+                </div>
+                <h3 class="text-lg font-medium text-gray-600 mb-2">No Campus News</h3>
+                <p class="text-gray-500">Stay tuned for the latest campus news and events.</p>
             </div>
-            <div class="text-gray-600 leading-relaxed">
-                <?php echo htmlspecialchars($news_item['summary']); ?>
-            </div>
-        </div>
-        <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 </div>

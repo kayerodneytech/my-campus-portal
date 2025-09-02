@@ -11,7 +11,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Fetch pending payments for the user
-require_once '../includes/config.php';
+require_once './includes/config.php';
 $pending_payments = [];
 
 try {

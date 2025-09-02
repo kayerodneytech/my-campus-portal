@@ -1,78 +1,42 @@
-<?php
-/**
- * Footer Component
- * Displays contact information and footer links
- * Used across all pages
- */
-
-// Sample contact data - in a real application, this would come from a database
-$contact_info = [
-    'admissions' => [
-        'title' => 'Admissions Office',
-        'phone' => '0782 573 049',
-        'email' => 'admissions@mycamp.edu',
-        'hours' => 'Mon-Fri 8AM-5PM'
-    ],
-    'registrar' => [
-        'title' => 'Registrar',
-        'phone' => '(555) 123-4568',
-        'email' => 'PollyBusiness@mycamp.edu',
-        'hours' => 'Mon-Fri 9AM-4PM'
-    ],
-    'support' => [
-        'title' => 'Student Support',
-        'phone' => '(555) 123-4569',
-        'email' => 'support@mycamp.edu',
-        'hours' => '24/7 Online Chat'
-    ],
-    'location' => [
-        'title' => 'Campus Location',
-        'address' => '123 University Drive<br>Education City, EC 12345',
-        'link' => 'View Campus Map'
-    ]
-];
-?>
-
-<footer class="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
-    <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-        <span class="text-3xl mr-3">📞</span>
-        Contact Information
-    </h3>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <?php foreach ($contact_info as $contact): ?>
-        <div class="bg-gray-50 rounded-lg p-4">
-            <h4 class="font-semibold text-gray-800 mb-3"><?php echo htmlspecialchars($contact['title']); ?></h4>
-            <div class="text-sm text-gray-600 space-y-1">
-                <?php if (isset($contact['phone'])): ?>
-                    <div><strong>Phone:</strong> <?php echo htmlspecialchars($contact['phone']); ?></div>
-                <?php endif; ?>
-                <?php if (isset($contact['email'])): ?>
-                    <div><strong>Email:</strong> <?php echo htmlspecialchars($contact['email']); ?></div>
-                <?php endif; ?>
-                <?php if (isset($contact['hours'])): ?>
-                    <div><strong>Hours:</strong> <?php echo htmlspecialchars($contact['hours']); ?></div>
-                <?php endif; ?>
-                <?php if (isset($contact['address'])): ?>
-                    <div><?php echo $contact['address']; ?></div>
-                <?php endif; ?>
-                <?php if (isset($contact['link'])): ?>
-                    <div>
-                        <a href="#" class="text-blue-600 hover:text-blue-800 transition-colors duration-200">
-                            <?php echo htmlspecialchars($contact['link']); ?>
-                        </a>
+<footer class="bg-gray-800 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <div class="flex items-center mb-4">
+                        <img src="1753449127073.jpg" alt="MyCamp Portal" class="h-8 w-8 rounded-full mr-3">
+                        <h3 class="text-xl font-extrabold">MyCamp Portal</h3>
                     </div>
-                <?php endif; ?>
+                    <p class="text-gray-300">
+                        Your comprehensive gateway to academic success. One stop place for life in college.
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-extrabold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="admin/index.php"  class="hover:text-white transition-colors duration-200">Admin Portal</a></li>
+                        <li><a href="#" onclick="openRegisterModal()" class="hover:text-white transition-colors duration-200">Apply Now</a></li>
+                        <li><a href="landing.php" class="hover:text-white transition-colors duration-200">Landing Page</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Contact Information</h4>
+                    <div class="space-y-2 text-gray-300">
+                        <div class="flex items-center">
+                            <i class="fas fa-phone mr-2"></i>
+                            <span>0782 573 049</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-envelope mr-2"></i>
+                            <span>admissions@mycamp.edu</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
+                <p>&copy; 2025 MyCamp Portal. All rights reserved.</p>
             </div>
         </div>
-        <?php endforeach; ?>
-    </div>
-    
-    <div class="border-t border-gray-200 pt-6 text-center text-gray-600">
-        <p>
-            © 2025 MyCamp Portal. All rights reserved. |
-            <a href="#" class="text-blue-600 hover:text-blue-800 transition-colors duration-200">Privacy Policy</a> |
-            <a href="#" class="text-blue-600 hover:text-blue-800 transition-colors duration-200">Terms of Service</a>
-        </p>
-    </div>
-</footer>
+    </footer>

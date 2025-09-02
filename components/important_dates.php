@@ -6,7 +6,7 @@
  */
 
 // Include database connection
-require_once '../includes/config.php';
+require_once './includes/config.php';
 
 // Fetch important dates from database (announcements table)
 $important_dates = [];
@@ -43,11 +43,22 @@ try {
     </h2>
     
     <div class="space-y-4">
-        <?php foreach ($important_dates as $date_item): ?>
-        <div class="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-            <span class="font-medium text-gray-700"><?php echo htmlspecialchars($date_item['label']); ?></span>
-            <span class="text-blue-600 font-semibold"><?php echo htmlspecialchars($date_item['date']); ?></span>
-        </div>
-        <?php endforeach; ?>
+        <?php if (!empty($important_dates)): ?>
+            <?php foreach ($important_dates as $date_item): ?>
+            <div class="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                <span class="font-medium text-gray-700"><?php echo htmlspecialchars($date_item['label']); ?></span>
+                <span class="text-blue-600 font-semibold"><?php echo htmlspecialchars($date_item['date']); ?></span>
+            </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="text-center py-8">
+                <div class="text-4xl text-gray-300 mb-4">
+                    <i class="fas fa-calendar-times"></i>
+                    <span class="fa-fallback" style="display: none;">📅</span>
+                </div>
+                <h3 class="text-lg font-medium text-gray-600 mb-2">No Important Dates</h3>
+                <p class="text-gray-500">Check back later for upcoming important dates and deadlines.</p>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
