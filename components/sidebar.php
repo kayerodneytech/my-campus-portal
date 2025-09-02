@@ -8,8 +8,8 @@
 // Sample navigation items - in a real application, this would come from a database or config
 $nav_items = [
     ['id' => 'welcome-board-link', 'label' => 'Welcome Board', 'fa_icon' => 'fas fa-home', 'emoji_fallback' => '🏠', 'active' => true],
-    ['id' => 'student-login-link', 'label' => 'Student Login', 'fa_icon' => 'fas fa-sign-in-alt', 'emoji_fallback' => '🔐', 'active' => false],
-    ['id' => 'apply-now-link', 'label' => 'Apply Now/Enroll', 'fa_icon' => 'fas fa-user-plus', 'emoji_fallback' => '📝', 'active' => false],
+    ['id' => 'student-login-link', 'label' => 'Student Login', 'fa_icon' => 'fas fa-sign-in-alt', 'emoji_fallback' => '🔐', 'active' => false, 'onclick' => 'openLoginModal()'],
+    ['id' => 'apply-now-link', 'label' => 'Apply Now/Enroll', 'fa_icon' => 'fas fa-user-plus', 'emoji_fallback' => '📝', 'active' => false, 'onclick' => 'openRegisterModal()'],
     ['id' => 'staff-catalog-link', 'label' => 'Staff Catalog', 'fa_icon' => 'fas fa-users', 'emoji_fallback' => '👥', 'active' => false],
     ['id' => 'courses-offered-link', 'label' => 'Courses Offered', 'fa_icon' => 'fas fa-book', 'emoji_fallback' => '📚', 'active' => false],
     ['id' => 'payments-link', 'label' => 'Payments', 'fa_icon' => 'fas fa-credit-card', 'emoji_fallback' => '💳', 'active' => false],
@@ -44,6 +44,9 @@ $nav_items = [
         <?php foreach ($nav_items as $item): ?>
                  <a href="#" 
             id="<?php echo htmlspecialchars($item['id']); ?>" 
+            <?php if (isset($item['onclick'])): ?>
+                onclick="<?php echo htmlspecialchars($item['onclick']); ?>"
+            <?php endif; ?>
             class="menu-item flex items-center px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-500 hover:shadow-md <?php echo $item['active'] ? 'bg-blue-500 shadow-md' : 'hover:bg-blue-500'; ?>">
              <span class="mr-4">
                  <i class="<?php echo htmlspecialchars($item['fa_icon']); ?> text-xl"></i>

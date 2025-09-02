@@ -30,7 +30,7 @@
         </div>
         
         <!-- Student Login Card -->
-        <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100">
+        <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100 cursor-pointer" onclick="openLoginModal()">
             <div class="mb-4">
                 <i class="fas fa-sign-in-alt text-4xl text-purple-600"></i>
                 <span class="fa-fallback text-4xl" style="display: none;">🔐</span>

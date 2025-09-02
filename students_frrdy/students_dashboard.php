@@ -1,13 +1,17 @@
 <?php
+/**
+ * Student Dashboard
+ * Updated to work with the new database structure and include payment modal
+ */
 
 session_start();
-require_once 'dbconnect.php';
+require_once '../includes/config.php';
 
 // If user is logged in and is a student, use their info; otherwise, use demo/anonymous
-$is_logged_in = isset($_SESSION['user_id']) && isset($_SESSION['role']) && $_SESSION['role'] === 'student';
+$is_logged_in = isset($_SESSION['user_id']) && isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'student';
 if ($is_logged_in) {
     $user_id = $_SESSION['user_id'];
-    $user_name = $_SESSION['full_name'];
+    $user_name = $_SESSION['user_name'];
 } else {
     $user_id = null;
     $user_name = 'Guest Student';
@@ -32,10 +36,11 @@ if ($is_logged_in) {
     $stmt->close();
 
     // Get pending assignments count
-    $query = "SELECT COUNT(*) FROM course_content cc 
-        JOIN enrollments e ON cc.course_id = e.course_id 
-        WHERE e.student_id = ? AND cc.type = 'assignment' 
-        AND cc.id NOT IN (SELECT content_id FROM student_submissions WHERE student_id = ?)";
+    $query = "SELECT COUNT(*) FROM assignments a 
+        JOIN classes c ON a.class_id = c.id 
+        JOIN enrollments e ON c.id = e.class_id 
+        WHERE e.student_id = ? AND a.due_date >= CURDATE()
+        AND a.id NOT IN (SELECT assignment_id FROM submissions WHERE student_id = ?)";
     $stmt = $conn->prepare($query);
     $stmt->bind_param('ii', $user_id, $user_id);
     $stmt->execute();
@@ -44,7 +49,7 @@ if ($is_logged_in) {
     $stmt->close();
 
     // Get average grade (numeric only)
-    $query = "SELECT AVG(CAST(grade AS DECIMAL(10,2))) FROM grades WHERE student_id = ? AND grade REGEXP '^[0-9]+$'";
+    $query = "SELECT AVG(score) FROM results WHERE student_id = ?";
     $stmt = $conn->prepare($query);
     $stmt->bind_param('i', $user_id);
     $stmt->execute();
@@ -74,13 +79,17 @@ if ($is_logged_in) {
     $stmt->fetch();
     $stmt->close();
 
-    // Get borrowed books count
-    $stmt = $conn->prepare("SELECT COUNT(*) FROM borrows WHERE student_id = ? AND status = 'borrowed'");
-    $stmt->bind_param('i', $user_id);
-    $stmt->execute();
-    $stmt->bind_result($stats['borrowed_books']);
-    $stmt->fetch();
-    $stmt->close();
+    // Get borrowed books count (if book_borrowings table exists)
+    try {
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM book_borrowings WHERE student_id = ? AND status = 'borrowed'");
+        $stmt->bind_param('i', $user_id);
+        $stmt->execute();
+        $stmt->bind_result($stats['borrowed_books']);
+        $stmt->fetch();
+        $stmt->close();
+    } catch (Exception $e) {
+        $stats['borrowed_books'] = 0; // Table might not exist yet
+    }
 
     // Get recent activities (limit 5)
     $recent_activities = [];
@@ -214,7 +223,7 @@ if ($is_logged_in) {
                 <div class="stat-label">Attendance Rate</div>
             </div>
 
-            <div class="stat-card">
+            <div class="stat-card clickable" onclick="openPaymentModal()" style="cursor: pointer;">
                 <div class="stat-icon payments">
                     <i class="fas fa-credit-card"></i>
                 </div>
@@ -326,5 +335,23 @@ if ($is_logged_in) {
             </div>
         </div>
     </div>
+    
+    <!-- Include Payment Modal -->
+    <?php include '../components/payment_modal.php'; ?>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        // Add click effect to clickable stat cards
+        document.querySelectorAll('.clickable').forEach(card => {
+            card.addEventListener('click', function() {
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 150);
+            });
+        });
+    </script>
 </body>
 </html>

@@ -16,32 +16,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
     
     try {
-        $stmt = $conn->prepare("SELECT id, name, password, role FROM users WHERE email = ?");
+        $stmt = $conn->prepare("SELECT id, first_name, last_name, password, role, status FROM users WHERE email = ?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $stmt->store_result();
         
         if ($stmt->num_rows == 1) {
-            $stmt->bind_result($id, $name, $hashed_password, $role);
+            $stmt->bind_result($id, $first_name, $last_name, $hashed_password, $role, $status);
             $stmt->fetch();
             
             if (password_verify($password, $hashed_password)) {
+                // Check if account is active
+                if ($status !== 'active') {
+                    echo json_encode(['success' => false, 'message' => 'Your account is not active. Please contact support.']);
+                    exit;
+                }
+                
                 // Login success
                 $_SESSION["user_id"] = $id;
-                $_SESSION["user_name"] = $name;
+                $_SESSION["user_name"] = $first_name . ' ' . $last_name;
+                $_SESSION["user_email"] = $email;
                 $_SESSION["user_role"] = $role;
                 
                 // Return redirect URL based on role
                 $redirect_url = '';
                 switch ($role) {
                     case 'admin':
+                    case 'super_admin':
                         $redirect_url = 'admin/index.php';
                         break;
                     case 'lecturer':
-                        $redirect_url = 'lecturers/index.php';
+                        $redirect_url = 'lecturers/dashboard.php';
                         break;
                     case 'student':
-                        $redirect_url = 'students/index.php';
+                        $redirect_url = 'students_frrdy/students_dashboard.php';
                         break;
                     default:
                         echo json_encode(['success' => false, 'message' => 'Invalid user role.']);

@@ -89,10 +89,14 @@
             <!-- Include Testimonial Component -->
             <?php include 'components/testimonial.php'; ?>
             
-            <!-- Include Footer Component -->
-            <?php include 'components/footer.php'; ?>
+                <!-- Include Footer Component -->
+    <?php include 'components/footer.php'; ?>
         </main>
     </div>
+    
+    <!-- Include Modal Components -->
+    <?php include 'components/login_modal.php'; ?>
+    <?php include 'components/register_modal.php'; ?>
     
     <!-- Include the main JavaScript file -->
     <script src="javascript/script.js"></script>
