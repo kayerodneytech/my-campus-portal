@@ -133,8 +133,7 @@
                                     <option value="">Select Gender</option>
                                     <option value="male">Male</option>
                                     <option value="female">Female</option>
-                                    <option value="other">Other</option>
-                                </select>
+                                                                    </select>
                             </div>
                         </div>
 
@@ -651,6 +650,19 @@ document.getElementById('registerForm').addEventListener('submit', async functio
             successDiv.classList.remove('hidden');
             submitBtn.innerHTML = 'Success! <i class="fas fa-check ml-2"></i>';
             
+            // Log registration activity
+    fetch('../includes/async/log_activity.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            activity_type: 'registration',
+            description: 'New user registration: ' + data.first_name + ' ' + data.last_name,
+            additional_data: 'Application: ' + result.application_number
+        })
+    }).catch(error => console.error('Activity logging error:', error));
+    
             // Redirect to student dashboard after delay
             setTimeout(() => {
                 window.location.href = 'student/index.php';

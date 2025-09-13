@@ -202,13 +202,7 @@ $systemStatus = [
                             <span>Approve Students (<?php echo $pendingStudents; ?>)</span>
                         </a>
                         
-                        <a href="applications.php" class="flex items-center p-3 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">
-                            <div class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center mr-3">
-                                <i class="fas fa-clipboard-list text-white"></i>
-                            </div>
-                            <span>Course Applications (<?php echo $pendingApplications; ?>)</span>
-                        </a>
-                        
+                   
                         <a href="courses.php" class="flex items-center p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
                             <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center mr-3">
                                 <i class="fas fa-book text-white"></i>
@@ -245,7 +239,7 @@ $systemStatus = [
                 <div class="bg-white rounded-xl shadow-md p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-semibold text-gray-800">Recent Activities</h2>
-                        <a href="activities.php" class="text-sm text-blue-600 hover:text-blue-800">View All</a>
+                        <a href="activity.php" class="text-sm text-blue-600 hover:text-blue-800">View All</a>
                     </div>
                     
                     <div class="space-y-3">

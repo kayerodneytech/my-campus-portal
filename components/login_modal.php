@@ -2,7 +2,7 @@
 /**
  * Login Modal Component
  * Modern modal-based login form with Tailwind CSS
- * Used across the portal for user authentication
+ * Handles login for all user types
  */
 ?>
 
@@ -183,16 +183,29 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         
         const result = await response.json();
         
-        if (result.success) {
-            // Show success message
-            btnText.textContent = 'Success!';
-            spinner.classList.add('hidden');
-            
-            // Redirect after short delay
-            setTimeout(() => {
-                window.location.href = result.redirect_url || 'index.php';
-            }, 1000);
-        } else {
+      // After successful login, log the activity
+if (result.success) {
+    // Log login activity
+    fetch('includes/async/log_activity.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            activity_type: 'login',
+            description: 'User logged in successfully'
+        })
+    }).catch(error => console.error('Activity logging error:', error));
+    
+    // Show success message
+    btnText.textContent = 'Success!';
+    spinner.classList.add('hidden');
+    
+    // Redirect after short delay
+    setTimeout(() => {
+        window.location.href = result.redirect_url || 'index.php';
+   }, 1000);
+} else {
             // Show error message
             errorText.textContent = result.message || 'Login failed. Please try again.';
             errorDiv.classList.remove('hidden');
