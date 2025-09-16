@@ -82,10 +82,10 @@ try {
     switch ($user['role']) {
         case 'admin':
         case 'super_admin':
-            $redirect_url = 'admin/dashboard.php';
+            $redirect_url = 'admin/index.php';
             break;
         case 'lecturer':
-            $redirect_url = 'lecturer/dashboard.php';
+            $redirect_url = 'lecturer/index.php';
             break;
         case 'student':
             $redirect_url = 'student/index.php';

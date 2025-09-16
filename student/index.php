@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_role']) || $_SESSION[
 
 // Get student details
 $studentId = $_SESSION['user_id'];
-$studentQuery = $conn->prepare("SELECT s.*, u.first_name, u.last_name, u.email, u.phone 
+$studentQuery = $conn->prepare("SELECT s.*, u.first_name, u.last_name, u.email, s.phone 
                                FROM students s 
                                JOIN users u ON s.user_id = u.id 
                                WHERE s.user_id = ?");

@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_role']) || $_SESSION[
 
 // Get student details
 $studentId = $_SESSION['user_id'];
-$studentQuery = $conn->prepare("SELECT s.*, u.first_name, u.last_name, u.email, u.phone, u.profile_image 
+$studentQuery = $conn->prepare("SELECT s.*, u.first_name, u.last_name, u.email, s.phone, s.profile_image 
                                FROM students s 
                                JOIN users u ON s.user_id = u.id 
                                WHERE s.user_id = ?");
@@ -281,7 +281,7 @@ $studentStatus = $statusResult->fetch_assoc()['status'];
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                                     <input type="email" value="<?php echo htmlspecialchars($student['email']); ?>" disabled
                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50">
-                                    <p class="text-xs text-gray-500 mt-1">Use the email update section below to change your email</p>
+                                    <p class="text-xs text-gray-500 mt-1">Use the email update section  to change your email</p>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>

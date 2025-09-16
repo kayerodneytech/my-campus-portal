@@ -2,7 +2,7 @@
 /**
  * Multi-step Registration Modal Component
  * Modern modal-based registration form with Tailwind CSS
- * Used across the portal for user registration
+ * Used for user registration
  */
 ?>
 
