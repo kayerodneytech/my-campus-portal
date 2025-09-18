@@ -608,7 +608,7 @@ function handleElectionStatusUpdate()
             document.getElementById('studentSearchResults').innerHTML = '';
         }
 
-        
+
         // Function to add a new candidate
         function addNewCandidate() {
             const electionId = document.getElementById('currentElectionId')?.value;
@@ -676,6 +676,46 @@ function handleElectionStatusUpdate()
                         addButton.innerHTML = '<i class="fas fa-user-plus mr-2"></i> Add Candidate';
                         addButton.disabled = false;
                     }
+                });
+        }
+
+        // Results Modal Functions
+        function openResultsModal(electionId) {
+            // Show loading state
+            document.getElementById('candidatesModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            document.getElementById('candidatesModalTitle').textContent = 'Election Results';
+            document.getElementById('candidatesModalContent').innerHTML = `
+        <div class="text-center py-8">
+            <i class="fas fa-spinner fa-spin text-blue-500 text-2xl mb-4"></i>
+            <p class="text-gray-500">Loading election results...</p>
+        </div>
+    `;
+
+            // Load results via AJAX
+            fetch(`includes/async/get_election_results.php?id=${electionId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    document.getElementById('candidatesModalContent').innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error loading results:', error);
+                    document.getElementById('candidatesModalContent').innerHTML = `
+                <div class="text-center py-8">
+                    <i class="fas fa-exclamation-circle text-red-500 text-2xl mb-4"></i>
+                    <p class="text-red-500">Error loading results</p>
+                    <p class="text-gray-500 text-sm mt-2">${error.message}</p>
+                    <button onclick="closeCandidatesModal()"
+                            class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Close
+                    </button>
+                </div>
+            `;
                 });
         }
 
