@@ -1,7 +1,7 @@
 <?php
 session_start();
-require_once '../../../includes/config.php';
-require_once '../../../includes/auth.php';
+require_once '../config.php';
+require_once '../auth.php';
 
 // Check if user is admin and logged in
 if (!isAdmin() || !isLoggedIn()) {
