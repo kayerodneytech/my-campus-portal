@@ -21,7 +21,6 @@ if (!$election) {
 function processElectionResults($electionId)
 {
     global $conn;
-
     try {
         $conn->begin_transaction();
 
@@ -86,60 +85,8 @@ function processElectionResults($electionId)
     }
 }
 
-
-if (isset($_GET['action']) && isset($_GET['id'])) {
-    handleElectionStatusUpdate();
-}
-
-function handleElectionStatusUpdate()
-{
-    global $conn;
-    $election_id = intval($_GET['id']);
-    $action = $_GET['action'];
-
-    try {
-        if ($action === 'start' && $conn->query("SELECT status FROM elections WHERE id = $election_id")->fetch_assoc()['status'] === 'draft') {
-            $conn->query("UPDATE elections SET status = 'active' WHERE id = $election_id");
-            logActivity('election_start', "Started election ID: $election_id");
-
-            // Send notification to all students
-            $election = $conn->query("SELECT title FROM elections WHERE id = $election_id")->fetch_assoc();
-            $conn->query("
-                INSERT INTO notifications (user_id, title, message, type, reference_id)
-                SELECT id, 'New Election Started', 'A new election \"{$election['title']}\" has started. Cast your vote now!', 'election', $election_id
-                FROM users
-                WHERE role = 'student'
-            ");
-            header("Location: elections.php?success=" . urlencode("Election started successfully"));
-            exit();
-        }
-
-        if ($action === 'end' && $conn->query("SELECT status FROM elections WHERE id = $election_id")->fetch_assoc()['status'] === 'active') {
-            $conn->query("UPDATE elections SET status = 'completed' WHERE id = $election_id");
-            logActivity('election_end', "Ended election ID: $election_id");
-
-            // Process results when election ends
-            require_once 'includes/async/get_election_results.php';
-            processElectionResults($election_id);
-
-            header("Location: elections.php?success=" . urlencode("Election ended successfully"));
-            exit();
-        }
-
-        if ($action === 'cancel') {
-            $conn->query("UPDATE elections SET status = 'cancelled' WHERE id = $election_id");
-            logActivity('election_cancel', "Cancelled election ID: $election_id");
-            header("Location: elections.php?success=" . urlencode("Election cancelled successfully"));
-            exit();
-        }
-    } catch (Exception $e) {
-        header("Location: elections.php?error=" . urlencode($e->getMessage()));
-        exit();
-    }
-}
 // Check if results have been processed
 $resultsProcessed = $conn->query("SELECT COUNT(*) as count FROM election_results WHERE election_id = $electionId")->fetch_assoc()['count'] > 0;
-
 if (!$resultsProcessed) {
     // Process results if they haven't been processed yet
     processElectionResults($electionId);
@@ -235,18 +182,56 @@ $totalVotes = $conn->query("SELECT COUNT(*) as count FROM election_votes WHERE e
                 </div>
                 <div class="space-y-4">
                     <?php foreach ($results as $result): ?>
+                        <?php
+                        // Check if this student is already on the board
+                        $onBoard = false;
+                        if ($result['is_winner'] || in_array($result['candidate_id'], array_column($winners, 'candidate_id'))) {
+                            $boardCheck = $conn->prepare("
+                                SELECT id FROM src_board
+                                WHERE election_id = ? AND position_id = ? AND student_id = ?
+                            ");
+                            $boardCheck->bind_param("iii", $electionId, $positionId, $result['student_id']);
+                            $boardCheck->execute();
+                            $boardCheck->store_result();
+                            $onBoard = $boardCheck->num_rows > 0;
+                        }
+                        ?>
                         <div class="bg-white rounded-lg p-4 relative border border-gray-200">
                             <?php if ($result['is_winner'] || in_array($result['candidate_id'], array_column($winners, 'candidate_id'))): ?>
                                 <div class="absolute -top-2 -right-2 w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white text-xs">
                                     <i class="fas fa-trophy"></i>
                                 </div>
                             <?php endif; ?>
+
                             <div class="flex items-start">
                                 <div class="flex-1">
-                                    <h3 class="font-medium text-gray-800 mb-1">
-                                        <?php echo htmlspecialchars($result['first_name'] . ' ' . $result['last_name']); ?>
-                                    </h3>
-                                    <p class="text-sm text-gray-500 mb-2"><?php echo htmlspecialchars($result['email']); ?></p>
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div>
+                                            <h3 class="font-medium text-gray-800 mb-1">
+                                                <?php echo htmlspecialchars($result['first_name'] . ' ' . $result['last_name']); ?>
+                                            </h3>
+                                            <p class="text-sm text-gray-500"><?php echo htmlspecialchars($result['email']); ?></p>
+                                        </div>
+                                        <?php if ($result['is_winner'] || in_array($result['candidate_id'], array_column($winners, 'candidate_id'))): ?>
+                                            <?php if ($onBoard): ?>
+                                                <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                                    <i class="fas fa-check-circle mr-1"></i> On Board
+                                                </span>
+                                            <?php else: ?>
+                                                <button onclick="openAddToBoardModal(
+                                                        <?php echo $electionId; ?>,
+                                                        <?php echo $positionId; ?>,
+                                                        <?php echo $result['student_id']; ?>,
+                                                        '<?php echo addslashes($result['first_name'] . ' ' . $result['last_name']); ?>',
+                                                        '<?php echo addslashes($result['email']); ?>'
+                                                    )"
+                                                    class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full hover:bg-blue-200">
+                                                    <i class="fas fa-user-plus mr-1"></i> Add to Board
+                                                </button>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
+                                    </div>
+
                                     <div class="w-full bg-gray-200 rounded-full h-2.5 mb-3">
                                         <div class="bg-blue-600 h-2.5 rounded-full"
                                             style="width: <?php echo $positionTotalVotes > 0 ? round(($result['vote_count'] / $positionTotalVotes) * 100) : 0; ?>%"></div>
@@ -284,8 +269,11 @@ $totalVotes = $conn->query("SELECT COUNT(*) as count FROM election_votes WHERE e
 
         // Create background colors array
         const backgroundColors = votes.map((vote, index) => {
-            return winners.includes(<?php echo $results[0]['candidate_id']; ?>) ? '#10b981' : '#3b82f6';
+            return winners.includes(votes[index] ? parseInt(chartElement.dataset.candidateIds.split(',')[index]) : 0) ? '#10b981' : '#3b82f6';
         });
+
+        // Fix for candidate IDs in chart data
+        const candidateIds = <?php echo json_encode(array_column($results, 'candidate_id')); ?>;
 
         new Chart(ctx<?php echo $position['id']; ?>, {
             type: 'bar',
@@ -295,10 +283,10 @@ $totalVotes = $conn->query("SELECT COUNT(*) as count FROM election_votes WHERE e
                     label: 'Votes',
                     data: votes,
                     backgroundColor: votes.map((vote, index) =>
-                        winners.includes(parseInt(chartElement.dataset.candidateIds.split(',')[index])) ? '#10b981' : '#3b82f6'
+                        winners.includes(candidateIds[index]) ? '#10b981' : '#3b82f6'
                     ),
                     borderColor: votes.map((vote, index) =>
-                        winners.includes(parseInt(chartElement.dataset.candidateIds.split(',')[index])) ? '#059669' : '#2563eb'
+                        winners.includes(candidateIds[index]) ? '#059669' : '#2563eb'
                     ),
                     borderWidth: 1
                 }]
@@ -333,7 +321,4 @@ $totalVotes = $conn->query("SELECT COUNT(*) as count FROM election_votes WHERE e
             }
         });
     <?php endforeach; ?>
-</script>
-<script>
-
 </script>

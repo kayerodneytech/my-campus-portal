@@ -148,3 +148,79 @@ function handleAddSingleCandidate()
         ]);
     }
 }
+
+// Logic to add candidate to the board
+if (isset($_POST['ajax_request']) && $_POST['ajax_request'] === 'add_to_board') {
+    handleAddToBoard();
+}
+
+function handleAddToBoard()
+{
+    global $conn;
+
+    try {
+        $election_id = intval($_POST['election_id']);
+        $position_id = intval($_POST['position_id']);
+        $student_id = intval($_POST['student_id']);
+        $term_start = $_POST['term_start'];
+        $term_end = $_POST['term_end'];
+        $contact_phone = $_POST['contact_phone'] ?? '';
+
+        // Validate inputs
+        $errors = [];
+        if (empty($election_id)) $errors[] = "Election ID is required";
+        if (empty($position_id)) $errors[] = "Position ID is required";
+        if (empty($student_id)) $errors[] = "Student ID is required";
+        if (empty($term_start)) $errors[] = "Term start date is required";
+        if (empty($term_end)) $errors[] = "Term end date is required";
+        if (strtotime($term_start) >= strtotime($term_end)) $errors[] = "Term end date must be after term start date";
+
+        if (!empty($errors)) {
+            echo json_encode(['success' => false, 'errors' => $errors]);
+            exit();
+        }
+
+        // Check if student is already on the board for this position
+        $check = $conn->prepare("
+            SELECT id FROM src_board
+            WHERE election_id = ? AND position_id = ? AND student_id = ?
+        ");
+        $check->bind_param("iii", $election_id, $position_id, $student_id);
+        $check->execute();
+        $check->store_result();
+
+        if ($check->num_rows > 0) {
+            echo json_encode(['success' => false, 'error' => 'This student is already on the board for this position']);
+            exit();
+        }
+
+        // Get student email
+        $student = $conn->query("SELECT email FROM users WHERE id = $student_id")->fetch_assoc();
+        $contact_email = $student['email'];
+
+        // Add to board
+        $stmt = $conn->prepare("
+            INSERT INTO src_board
+            (election_id, position_id, student_id, term_start, term_end, contact_email, contact_phone, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'active', NOW())
+        ");
+        $stmt->bind_param("iisssss", $election_id, $position_id, $student_id, $term_start, $term_end, $contact_email, $contact_phone);
+        $stmt->execute();
+        $stmt->close();
+
+        // Log activity
+        $electionTitle = $conn->query("SELECT title FROM elections WHERE id = $election_id")->fetch_assoc()['title'];
+        $positionName = $conn->query("SELECT name FROM election_positions WHERE id = $position_id")->fetch_assoc()['name'];
+        logActivity('board_add', "Added student to board from election: $electionTitle, Position: $positionName", "Board ID: " . $conn->insert_id);
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Student added to board successfully'
+        ]);
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'error' => "Database error: " . $e->getMessage()
+        ]);
+    }
+}

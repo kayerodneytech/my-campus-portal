@@ -423,6 +423,69 @@ function handleElectionStatusUpdate()
         </div>
     </div>
 
+    <!-- Add to Board Modal -->
+    <div id="addToBoardModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+                <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-800">Add to Board</h3>
+                    <button onclick="closeAddToBoardModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <form id="addToBoardForm" onsubmit="return false;">
+                        <input type="hidden" id="boardElectionId">
+                        <input type="hidden" id="boardPositionId">
+                        <input type="hidden" id="boardStudentId">
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Student</label>
+                            <div id="boardStudentName" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100"></div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                            <div id="boardStudentEmail" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100"></div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Term Start *</label>
+                            <input type="text" id="boardTermStart" class="w-full px-4 py-2 border border-gray-300 rounded-lg flatpickr"
+                                placeholder="Select term start date">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Term End *</label>
+                            <input type="text" id="boardTermEnd" class="w-full px-4 py-2 border border-gray-300 rounded-lg flatpickr"
+                                placeholder="Select term end date">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Contact Phone</label>
+                            <input type="text" id="boardContactPhone" class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                                placeholder="Optional contact phone">
+                        </div>
+
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="closeAddToBoardModal()"
+                                class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400">
+                                Cancel
+                            </button>
+                            <button type="button" onclick="addToBoard()"
+                                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                <span id="addToBoardButtonText"><i class="fas fa-user-plus mr-2"></i> Add to Board</span>
+                                <span id="addToBoardButtonLoading" class="hidden">
+                                    <i class="fas fa-spinner fa-spin mr-2"></i> Adding...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Include component files -->
     <?php include 'components/election_modal.php'; ?>
     <?php include 'components/candidates_modal.php'; ?>
@@ -719,6 +782,110 @@ function handleElectionStatusUpdate()
                 });
         }
 
+
+        // Add to Board Modal Functions
+        function openAddToBoardModal(electionId, positionId, studentId, studentName, studentEmail) {
+            // Set the form values
+            document.getElementById('boardElectionId').value = electionId;
+            document.getElementById('boardPositionId').value = positionId;
+            document.getElementById('boardStudentId').value = studentId;
+            document.getElementById('boardStudentName').textContent = studentName;
+            document.getElementById('boardStudentEmail').textContent = studentEmail;
+
+            // Initialize date pickers if not already initialized
+            if (!window.boardFlatpickrInitialized) {
+                flatpickr("#boardTermStart", {
+                    dateFormat: "Y-m-d",
+                    minDate: "today"
+                });
+                flatpickr("#boardTermEnd", {
+                    dateFormat: "Y-m-d",
+                    minDate: "today"
+                });
+                window.boardFlatpickrInitialized = true;
+            }
+
+            // Show the modal
+            document.getElementById('addToBoardModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAddToBoardModal() {
+            document.getElementById('addToBoardModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+
+            // Clear the form
+            document.getElementById('addToBoardForm').reset();
+            document.getElementById('addToBoardButtonText').classList.remove('hidden');
+            document.getElementById('addToBoardButtonLoading').classList.add('hidden');
+        }
+
+        function addToBoard() {
+            const electionId = document.getElementById('boardElectionId').value;
+            const positionId = document.getElementById('boardPositionId').value;
+            const studentId = document.getElementById('boardStudentId').value;
+            const termStart = document.getElementById('boardTermStart').value;
+            const termEnd = document.getElementById('boardTermEnd').value;
+            const contactPhone = document.getElementById('boardContactPhone').value;
+
+            // Validate required fields
+            if (!termStart || !termEnd) {
+                alert('Please select both term start and end dates');
+                return;
+            }
+
+            if (new Date(termStart) >= new Date(termEnd)) {
+                alert('Term end date must be after term start date');
+                return;
+            }
+
+            // Show loading state
+            document.getElementById('addToBoardButtonText').classList.add('hidden');
+            document.getElementById('addToBoardButtonLoading').classList.remove('hidden');
+
+            // Prepare data for submission
+            const formData = new FormData();
+            formData.append('election_id', electionId);
+            formData.append('position_id', positionId);
+            formData.append('student_id', studentId);
+            formData.append('term_start', termStart);
+            formData.append('term_end', termEnd);
+            formData.append('contact_phone', contactPhone);
+            formData.append('ajax_request', 'add_to_board');
+
+            fetch('includes/async/handle_election.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert('Student successfully added to the board!');
+                        closeAddToBoardModal();
+
+                        // Refresh the results to show the board status
+                        const electionId = document.getElementById('boardElectionId').value;
+                        openResultsModal(electionId);
+                    } else {
+                        alert('Error adding to board: ' + (data.error || 'Unknown error'));
+                        // Reset button state
+                        document.getElementById('addToBoardButtonText').classList.remove('hidden');
+                        document.getElementById('addToBoardButtonLoading').classList.add('hidden');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error adding to board:', error);
+                    alert('Error adding to board. Please try again.');
+                    // Reset button state
+                    document.getElementById('addToBoardButtonText').classList.remove('hidden');
+                    document.getElementById('addToBoardButtonLoading').classList.add('hidden');
+                });
+        }
 
         // Function to open the create election modal
         function openCreateElectionModal() {
