@@ -37,21 +37,16 @@
                 <span class="font-medium">My Courses</span>
             </a>
 
-            <a href="assignments.php" class="menu-item flex items-center px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-500 hover:shadow-md">
+            <a href="#" class="menu-item flex items-center px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-500 hover:shadow-md">
                 <span class="mr-4">
                     <i class="fas fa-tasks text-xl"></i>
                 </span>
                 <span class="font-medium">Assignments</span>
             </a>
 
-            <a href="grades.php" class="menu-item flex items-center px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-500 hover:shadow-md">
-                <span class="mr-4">
-                    <i class="fas fa-chart-line text-xl"></i>
-                </span>
-                <span class="font-medium">Grades</span>
-            </a>
 
-            <a href="timetable.php" class="menu-item flex items-center px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-500 hover:shadow-md">
+
+            <a href="#" class="menu-item flex items-center px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-500 hover:shadow-md">
                 <span class="mr-4">
                     <i class="fas fa-calendar text-xl"></i>
                 </span>
@@ -75,7 +70,7 @@
             <span class="font-medium">Payments</span>
         </a>
 
-        <a href="resources.php" class="menu-item flex items-center px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-500 hover:shadow-md">
+        <a href="#" class="menu-item flex items-center px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-500 hover:shadow-md">
             <span class="mr-4">
                 <i class="fas fa-book-open text-xl"></i>
             </span>
@@ -83,21 +78,21 @@
         </a>
 
         <?php if ($studentStatus === 'active'): ?>
-            <a href="library.php" class="menu-item flex items-center px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-500 hover:shadow-md">
+            <a href="#" class="menu-item flex items-center px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-500 hover:shadow-md">
                 <span class="mr-4">
                     <i class="fas fa-book-reader text-xl"></i>
                 </span>
                 <span class="font-medium">Library</span>
             </a>
 
-            <a href="support.php" class="menu-item flex items-center px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-500 hover:shadow-md">
+            <a href="#" class="menu-item flex items-center px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-500 hover:shadow-md">
                 <span class="mr-4">
                     <i class="fas fa-graduation-cap text-xl"></i>
                 </span>
                 <span class="font-medium">Academic Support</span>
             </a>
 
-            <a href="organizations.php" class="menu-item flex items-center px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-500 hover:shadow-md">
+            <a href="#" class="menu-item flex items-center px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-500 hover:shadow-md">
                 <span class="mr-4">
                     <i class="fas fa-users text-xl"></i>
                 </span>
