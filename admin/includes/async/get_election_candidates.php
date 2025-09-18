@@ -1,7 +1,8 @@
 <?php
+// admin/includes/async/get_election_candidates.php
 session_start();
-require_once '../config.php';
-require_once '../auth.php';
+require_once '../../includes/config.php';
+require_once '../../includes/auth.php';
 
 if (!isAdmin() || !isLoggedIn()) {
     header('Location: ../../login.php');
@@ -10,6 +11,7 @@ if (!isAdmin() || !isLoggedIn()) {
 
 $electionId = intval($_GET['id'] ?? 0);
 $addForm = isset($_GET['add_form']) && $_GET['add_form'] === 'true';
+$positionId = isset($_GET['position']) ? intval($_GET['position']) : null;
 
 // Get election details
 $election = $conn->query("SELECT * FROM elections WHERE id = $electionId")->fetch_assoc();
@@ -74,7 +76,7 @@ foreach ($candidates as $candidate) {
 
 if ($addForm) {
     // Display the add candidate form
-    includeAddCandidateForm($electionId, $positions);
+    includeAddCandidateForm($electionId, $positions, $positionId);
 } else {
     // Display the candidates list
     includeCandidatesList($electionId, $election, $candidatesByPosition, $positions);
@@ -85,34 +87,48 @@ function includeCandidatesList($electionId, $election, $candidatesByPosition, $p
 ?>
     <div class="flex flex-col md:flex-row justify-between items-center mb-6">
         <h2 class="text-xl font-semibold text-gray-800"><?php echo htmlspecialchars($election['title']); ?> Candidates</h2>
-        <button onclick="openAddCandidateForm(<?php echo $electionId; ?>)"
-            class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">
-            <i class="fas fa-user-plus mr-2"></i> Add Candidates
-        </button>
+        <?php if (!empty($positions)): ?>
+            <button onclick="openAddCandidateForm(<?php echo $electionId; ?>)"
+                class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">
+                <i class="fas fa-user-plus mr-2"></i> Add Candidates
+            </button>
+        <?php endif; ?>
     </div>
 
     <?php if (empty($candidatesByPosition)): ?>
         <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center mb-6">
             <i class="fas fa-users-slash text-yellow-400 text-3xl mb-2"></i>
             <p class="text-yellow-800 font-medium mb-4">No candidates added yet</p>
-            <button onclick="openAddCandidateForm(<?php echo $electionId; ?>)"
-                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                <i class="fas fa-user-plus mr-2"></i> Add Candidates Now
-            </button>
+            <?php if (!empty($positions)): ?>
+                <button onclick="openAddCandidateForm(<?php echo $electionId; ?>)"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-user-plus mr-2"></i> Add Candidates Now
+                </button>
+            <?php else: ?>
+                <p class="text-gray-500">No positions defined for this election</p>
+            <?php endif; ?>
         </div>
     <?php else: ?>
         <?php foreach ($candidatesByPosition as $position): ?>
             <div class="mb-8">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold text-gray-800">
-                        <?php echo htmlspecialchars($position['position']['name']); ?>
-                        <span class="text-sm text-gray-500 ml-2">
-                            (Max <?php echo $position['position']['max_candidates']; ?>)
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">
+                            <?php echo htmlspecialchars($position['position']['name']); ?>
+                            <span class="text-sm text-gray-500 ml-2">
+                                (Max <?php echo $position['position']['max_candidates']; ?>)
+                            </span>
+                        </h3>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-sm text-gray-500">
+                            <?php echo count($position['candidates']); ?> candidate<?php echo count($position['candidates']) !== 1 ? 's' : ''; ?>
                         </span>
-                    </h3>
-                    <span class="text-sm text-gray-500">
-                        <?php echo count($position['candidates']); ?> candidate<?php echo count($position['candidates']) !== 1 ? 's' : ''; ?>
-                    </span>
+                        <button onclick="openAddCandidateForm(<?php echo $electionId; ?>, <?php echo $position['position']['id']; ?>)"
+                            class="text-blue-600 hover:text-blue-800 text-sm flex items-center">
+                            <i class="fas fa-plus-circle mr-1"></i> Add
+                        </button>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -142,11 +158,23 @@ function includeCandidatesList($electionId, $election, $candidatesByPosition, $p
 <?php
 }
 
-function includeAddCandidateForm($electionId, $positions)
+function includeAddCandidateForm($electionId, $positions, $positionId = null)
 {
+    // If positionId is provided, find the position details
+    $selectedPosition = null;
+    if ($positionId) {
+        foreach ($positions as $position) {
+            if ($position['id'] == $positionId) {
+                $selectedPosition = $position;
+                break;
+            }
+        }
+    }
 ?>
     <div class="flex flex-col md:flex-row justify-between items-center mb-6">
-        <h2 class="text-xl font-semibold text-gray-800">Add Candidate to Election</h2>
+        <h2 class="text-xl font-semibold text-gray-800">
+            <?php echo $selectedPosition ? 'Add Candidate for ' . htmlspecialchars($selectedPosition['name']) : 'Add Candidate'; ?>
+        </h2>
         <button onclick="closeAddCandidateForm()"
             class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 text-sm">
             <i class="fas fa-times mr-2"></i> Back to Candidates
@@ -155,25 +183,36 @@ function includeAddCandidateForm($electionId, $positions)
 
     <input type="hidden" id="currentElectionId" value="<?php echo $electionId; ?>">
 
-    <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Position *</label>
-        <select id="newCandidatePosition" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-            <option value="">Select Position</option>
-            <?php foreach ($positions as $position): ?>
-                <option value="<?php echo $position['id']; ?>"
-                    data-max="<?php echo $position['max_candidates']; ?>">
-                    <?php echo htmlspecialchars($position['name']); ?>
-                    (Max <?php echo $position['max_candidates']; ?>)
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </div>
+    <?php if (!$selectedPosition): ?>
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Position *</label>
+            <select id="newCandidatePosition" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                <option value="">Select Position</option>
+                <?php foreach ($positions as $position): ?>
+                    <option value="<?php echo $position['id']; ?>"
+                        data-max="<?php echo $position['max_candidates']; ?>">
+                        <?php echo htmlspecialchars($position['name']); ?>
+                        (Max <?php echo $position['max_candidates']; ?>)
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+    <?php else: ?>
+        <input type="hidden" id="newCandidatePosition" value="<?php echo $selectedPosition['id']; ?>">
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Position</label>
+            <div class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100">
+                <?php echo htmlspecialchars($selectedPosition['name']); ?>
+                <span class="text-xs text-gray-500 ml-2">(Max <?php echo $selectedPosition['max_candidates']; ?>)</span>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Student *</label>
-        <select id="newCandidateStudent" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-            <option value="">Search for student...</option>
-        </select>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Search for Student *</label>
+        <input type="text" id="newCandidateStudentSearch" class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+            placeholder="Search by name or student ID...">
+        <input type="hidden" id="newCandidateStudent">
     </div>
 
     <div class="mb-4">
@@ -197,32 +236,27 @@ function includeAddCandidateForm($electionId, $positions)
         </button>
     </div>
 
+    <div id="studentSearchResults" class="mt-4"></div>
+
     <script>
-        // Initialize student search for the new candidate form
+        // Initialize student search
         document.addEventListener('DOMContentLoaded', function() {
-            const studentSelect = document.getElementById('newCandidateStudent');
-            if (studentSelect) {
-                let searchInitialized = false;
-                let searchTimeout;
+            const searchInput = document.getElementById('newCandidateStudentSearch');
+            const studentIdInput = document.getElementById('newCandidateStudent');
+            let searchTimeout;
 
-                studentSelect.addEventListener('focus', function() {
-                    if (!searchInitialized) {
-                        loadStudentsForNewCandidate();
-                        searchInitialized = true;
-                    }
-                });
-
-                studentSelect.addEventListener('input', function() {
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
                     clearTimeout(searchTimeout);
-                    searchTimeout = setTimeout(loadStudentsForNewCandidate, 300);
+                    searchTimeout = setTimeout(searchStudents, 300);
                 });
             }
         });
 
-        // Function to load students for the new candidate form
-        function loadStudentsForNewCandidate() {
+        // Function to search for students
+        function searchStudents() {
             const positionId = document.getElementById('newCandidatePosition').value;
-            const searchTerm = document.getElementById('newCandidateStudent').value;
+            const searchTerm = document.getElementById('newCandidateStudentSearch').value;
             const electionId = document.getElementById('currentElectionId').value;
 
             if (!positionId) {
@@ -230,7 +264,10 @@ function includeAddCandidateForm($electionId, $positions)
                 return;
             }
 
-            const select = document.getElementById('newCandidateStudent');
+            if (searchTerm.length < 2) {
+                document.getElementById('studentSearchResults').innerHTML = '';
+                return;
+            }
 
             fetch(`search_students.php?term=${encodeURIComponent(searchTerm)}&position=${positionId}&election=${electionId}`)
                 .then(response => {
@@ -241,46 +278,48 @@ function includeAddCandidateForm($electionId, $positions)
                 })
                 .then(data => {
                     if (data.success) {
-                        // Clear existing options (except the first one)
-                        while (select.options.length > 1) {
-                            select.remove(1);
-                        }
-
-                        // Add new students
+                        const resultsContainer = document.getElementById('studentSearchResults');
                         if (data.students && data.students.length > 0) {
+                            let html = '<div class="space-y-2">';
                             data.students.forEach(student => {
-                                const option = document.createElement('option');
-                                option.value = student.id;
-                                option.textContent = `${student.first_name} ${student.last_name} (${student.application_number})`;
-                                select.appendChild(option);
+                                html += `
+                                    <div class="p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
+                                         onclick="selectStudent(${student.id}, '${student.first_name} ${student.last_name} (${student.application_number})')">
+                                        <div class="font-medium">${student.first_name} ${student.last_name}</div>
+                                        <div class="text-sm text-gray-500">${student.application_number}</div>
+                                    </div>
+                                `;
                             });
+                            html += '</div>';
+                            resultsContainer.innerHTML = html;
                         } else {
-                            const option = document.createElement('option');
-                            option.value = "";
-                            option.textContent = "No students found";
-                            option.disabled = true;
-                            select.appendChild(option);
+                            resultsContainer.innerHTML = '<p class="text-gray-500 text-sm mt-2">No students found</p>';
                         }
                     } else {
                         console.error('Error loading students:', data.error || 'Unknown error');
-                        alert(data.error || 'Error loading students. Please check the console for details.');
+                        document.getElementById('studentSearchResults').innerHTML =
+                            '<p class="text-red-500 text-sm mt-2">' + (data.error || 'Error loading students') + '</p>';
                     }
                 })
                 .catch(error => {
                     console.error('Error loading students:', error);
-                    alert(`Error loading students: ${error.message}`);
+                    document.getElementById('studentSearchResults').innerHTML =
+                        '<p class="text-red-500 text-sm mt-2">Error loading students. Please try again.</p>';
                 });
+        }
+
+        // Function to select a student
+        function selectStudent(studentId, studentName) {
+            document.getElementById('newCandidateStudent').value = studentId;
+            document.getElementById('newCandidateStudentSearch').value = studentName;
+            document.getElementById('studentSearchResults').innerHTML = '';
         }
 
         // Function to add a new candidate
         function addNewCandidate() {
             const electionId = document.getElementById('currentElectionId').value;
             const positionId = document.getElementById('newCandidatePosition').value;
-            const positionSelect = document.getElementById('newCandidatePosition');
-            const positionName = positionSelect.options[positionSelect.selectedIndex]?.text || '';
             const studentId = document.getElementById('newCandidateStudent').value;
-            const studentSelect = document.getElementById('newCandidateStudent');
-            const studentText = studentSelect.options[studentSelect.selectedIndex]?.text || '';
             const manifesto = document.getElementById('newCandidateManifesto').value;
 
             if (!positionId) {
@@ -350,6 +389,10 @@ function includeAddCandidateForm($electionId, $positions)
                 })
                 .then(html => {
                     document.getElementById('candidatesModalContent').innerHTML = html;
+                    const titleElement = document.querySelector('#candidatesModalContent h2');
+                    if (titleElement) {
+                        document.getElementById('candidatesModalTitle').textContent = titleElement.textContent;
+                    }
                 })
                 .catch(error => {
                     console.error('Error loading candidates:', error);

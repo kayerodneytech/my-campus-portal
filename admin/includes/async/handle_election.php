@@ -1,8 +1,8 @@
 <?php
 // admin/includes/async/handle_election.php
 session_start();
-require_once '../config.php';
-require_once '../auth.php';
+require_once '../../../includes/config.php';
+require_once '../../../includes/auth.php';
 require_once '../../utils/activity_logger.php';
 
 header('Content-Type: application/json');
@@ -15,6 +15,8 @@ if (!isAdmin() || !isLoggedIn()) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['ajax_request']) && $_POST['ajax_request'] === 'create_election') {
         handleCreateElection();
+    } elseif (isset($_POST['ajax_request']) && $_POST['ajax_request'] === 'add_single_candidate') {
+        handleAddSingleCandidate();
     }
 }
 
@@ -90,12 +92,6 @@ function handleCreateElection()
         ]);
     }
 }
-
-// Add this to admin/includes/async/handle_election.php
-if (isset($_POST['ajax_request']) && $_POST['ajax_request'] === 'add_single_candidate') {
-    handleAddSingleCandidate();
-}
-
 function handleAddSingleCandidate()
 {
     global $conn;
@@ -128,17 +124,8 @@ function handleAddSingleCandidate()
             exit();
         }
 
-        // Get position max candidates
-        $position = $conn->query("SELECT max_candidates FROM election_positions WHERE id = $position_id")->fetch_assoc();
-        $maxCandidates = $position['max_candidates'];
-
-        // Check if position has reached max candidates
-        $currentCandidates = $conn->query("SELECT COUNT(*) as count FROM election_candidates WHERE election_id = $election_id AND position_id = $position_id")->fetch_assoc()['count'];
-
-        if ($currentCandidates >= $maxCandidates) {
-            echo json_encode(['success' => false, 'error' => "This position can only have $maxCandidates candidate(s)"]);
-            exit();
-        }
+        // REMOVED: The max candidates check that was incorrectly limiting candidates
+        // The max_candidates field should only be used when determining winners, not when adding candidates
 
         // Add candidate
         $stmt = $conn->prepare("INSERT INTO election_candidates (election_id, position_id, student_id, manifesto) VALUES (?, ?, ?, ?)");

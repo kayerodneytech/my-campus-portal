@@ -1,8 +1,8 @@
 <?php
 // admin/includes/async/search_students.php
 session_start();
-require_once '../config.php';
-require_once '../auth.php';
+require_once '../../includes/config.php';
+require_once '../../includes/auth.php';
 
 header('Content-Type: application/json');
 
@@ -16,6 +16,7 @@ $positionId = intval($_GET['position'] ?? 0);
 $electionId = intval($_GET['election'] ?? 0);
 
 try {
+    // Base query to get active students
     $query = "
         SELECT u.id, u.first_name, u.last_name, s.application_number
         FROM users u
@@ -26,11 +27,12 @@ try {
     $params = [];
     $types = '';
 
+    // Add search term filtering if provided
     if (!empty($term)) {
-        $query .= " AND (u.first_name LIKE ? OR u.last_name LIKE ? OR s.application_number LIKE ?)";
+        $query .= " AND (u.first_name LIKE ? OR u.last_name LIKE ? OR s.application_number LIKE ? OR CONCAT(u.first_name, ' ', u.last_name) LIKE ?)";
         $searchTerm = "%$term%";
-        $params = [$searchTerm, $searchTerm, $searchTerm];
-        $types = 'sss';
+        $params = [$searchTerm, $searchTerm, $searchTerm, $searchTerm];
+        $types = 'ssss';
     }
 
     // Exclude students who are already candidates for this position in this election
