@@ -1,3 +1,21 @@
+<?php
+// students/sidebar.php
+$currentPage = basename($_SERVER['PHP_SELF']);
+
+// Get student status if not already defined
+if (!isset($studentStatus)) {
+
+    require_once '../includes/config.php';
+
+    if (isset($_SESSION['user_id'])) {
+        $studentId = $_SESSION['user_id'];
+        $student = $conn->query("SELECT status FROM students WHERE user_id = $studentId")->fetch_assoc();
+        $studentStatus = $student ? $student['status'] : 'pending';
+    } else {
+        $studentStatus = 'pending';
+    }
+}
+?>
 <nav id="student-sidebar" class="w-80 bg-gradient-to-b from-blue-600 to-blue-700 text-white fixed lg:relative z-40 h-screen lg:h-auto overflow-y-auto hidden lg:block">
     <!-- Sidebar Header -->
     <div class="p-6 border-b border-blue-500">
@@ -92,7 +110,7 @@
                 <span class="font-medium">Academic Support</span>
             </a>
 
-            <a href="#" class="menu-item flex items-center px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-500 hover:shadow-md">
+            <a href="organizations.php" class="menu-item flex items-center px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-500 hover:shadow-md">
                 <span class="mr-4">
                     <i class="fas fa-users text-xl"></i>
                 </span>

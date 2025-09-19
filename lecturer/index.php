@@ -2,21 +2,18 @@
 session_start();
 require_once '../includes/config.php';
 require_once '../includes/auth.php';
-
-
 // Get lecturer details
 $lecturer_id = $_SESSION['user_id'];
 $lecturer_query = $conn->prepare("
-    SELECT u.*, lp.*, d.name as department_name 
-    FROM users u 
-    JOIN lecturer_profiles lp ON u.id = lp.user_id 
-    LEFT JOIN departments d ON lp.department = d.id 
+    SELECT u.*, lp.*, d.name as department_name
+    FROM users u
+    JOIN lecturer_profiles lp ON u.id = lp.user_id
+    LEFT JOIN departments d ON lp.department = d.id
     WHERE u.id = ?
 ");
 $lecturer_query->bind_param("i", $lecturer_id);
 $lecturer_query->execute();
 $lecturer = $lecturer_query->get_result()->fetch_assoc();
-
 // Get lecturer's courses
 $courses_query = $conn->prepare("
     SELECT c.*, ca.role, ca.academic_year, ca.semester
@@ -28,21 +25,19 @@ $courses_query = $conn->prepare("
 $courses_query->bind_param("i", $lecturer_id);
 $courses_query->execute();
 $courses = $courses_query->get_result()->fetch_all(MYSQLI_ASSOC);
-
 // Get lecturer's classes for today and tomorrow
 $today = date('Y-m-d');
 $tomorrow = date('Y-m-d', strtotime('+1 day'));
 $day_map = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 $today_day = strtolower(date('l'));
-
 $classes_query = $conn->prepare("
     SELECT cl.*, c.course_name, c.course_code
     FROM classes cl
     JOIN courses c ON cl.course_id = c.id
     WHERE cl.lecturer_id = ? AND cl.status = 'ongoing'
-    AND cl.academic_year = YEAR(CURDATE()) 
+    AND cl.academic_year = YEAR(CURDATE())
     AND cl.semester = (
-        CASE 
+        CASE
             WHEN MONTH(CURDATE()) BETWEEN 1 AND 4 THEN 'winter'
             WHEN MONTH(CURDATE()) BETWEEN 5 AND 7 THEN 'spring'
             WHEN MONTH(CURDATE()) BETWEEN 8 AND 9 THEN 'summer'
@@ -53,7 +48,6 @@ $classes_query = $conn->prepare("
 $classes_query->bind_param("i", $lecturer_id);
 $classes_query->execute();
 $all_classes = $classes_query->get_result()->fetch_all(MYSQLI_ASSOC);
-
 // Filter classes for today
 $today_classes = [];
 foreach ($all_classes as $class) {
@@ -62,10 +56,9 @@ foreach ($all_classes as $class) {
         $today_classes[] = $class;
     }
 }
-
 // Get assignment statistics
 $assignments_query = $conn->prepare("
-    SELECT 
+    SELECT
         a.id,
         a.title,
         a.due_date,
@@ -85,14 +78,13 @@ $assignments_query = $conn->prepare("
 $assignments_query->bind_param("i", $lecturer_id);
 $assignments_query->execute();
 $assignments = $assignments_query->get_result()->fetch_all(MYSQLI_ASSOC);
-
 // Get recent announcements
 $announcements_query = $conn->prepare("
     SELECT a.*, c.course_code, c.course_name
     FROM announcements a
     LEFT JOIN classes cl ON a.class_id = cl.id
     LEFT JOIN courses c ON cl.course_id = c.id
-    WHERE a.lecturer_id = ? AND a.is_published = TRUE 
+    WHERE a.lecturer_id = ? AND a.is_published = TRUE
     AND (a.expires_at IS NULL OR a.expires_at >= NOW())
     ORDER BY a.created_at DESC
     LIMIT 5
@@ -100,7 +92,6 @@ $announcements_query = $conn->prepare("
 $announcements_query->bind_param("i", $lecturer_id);
 $announcements_query->execute();
 $announcements = $announcements_query->get_result()->fetch_all(MYSQLI_ASSOC);
-
 // Get student counts for each course
 $student_counts = [];
 foreach ($courses as $course) {
@@ -112,7 +103,7 @@ foreach ($courses as $course) {
         WHERE ca.course_id = ? AND ca.lecturer_id = ?
         AND cl.academic_year = YEAR(CURDATE())
         AND cl.semester = (
-            CASE 
+            CASE
                 WHEN MONTH(CURDATE()) BETWEEN 1 AND 4 THEN 'winter'
                 WHEN MONTH(CURDATE()) BETWEEN 5 AND 7 THEN 'spring'
                 WHEN MONTH(CURDATE()) BETWEEN 8 AND 9 THEN 'summer'
@@ -125,17 +116,14 @@ foreach ($courses as $course) {
     $count_result = $count_query->get_result()->fetch_assoc();
     $student_counts[$course['id']] = $count_result['student_count'];
 }
-
 // Calculate statistics for dashboard
 $total_students = array_sum($student_counts);
 $total_courses = count($courses);
 $total_assignments = count($assignments);
 $ungraded_submissions = 0;
-
 foreach ($assignments as $assignment) {
     $ungraded_submissions += ($assignment['submitted'] - $assignment['graded']);
 }
-
 // Get course performance data
 $performance_data = [];
 $performance_labels = [];
@@ -151,11 +139,10 @@ foreach ($courses as $course) {
     $performance_query->bind_param("ii", $course['id'], $lecturer_id);
     $performance_query->execute();
     $performance_result = $performance_query->get_result()->fetch_assoc();
-    
+
     $performance_data[] = $performance_result['avg_grade'] ? round($performance_result['avg_grade'], 1) : 0;
     $performance_labels[] = $course['course_code'];
 }
-
 // Get assignment status data
 $assignment_status = ['graded' => 0, 'submitted' => 0, 'not_submitted' => 0, 'late' => 0];
 foreach ($assignments as $assignment) {
@@ -164,18 +151,16 @@ foreach ($assignments as $assignment) {
     $assignment_status['not_submitted'] += ($assignment['total_students'] - $assignment['submitted']);
     // Note: Late submissions are already included in 'submitted'
 }
-
 // Get notification counts
 $notifications_query = $conn->prepare("
-    SELECT COUNT(*) as count FROM notifications 
+    SELECT COUNT(*) as count FROM notifications
     WHERE user_id = ? AND is_read = FALSE
 ");
 $notifications_query->bind_param("i", $lecturer_id);
 $notifications_query->execute();
 $notifications_count = $notifications_query->get_result()->fetch_assoc()['count'];
-
 $messages_query = $conn->prepare("
-    SELECT COUNT(*) as count FROM messages 
+    SELECT COUNT(*) as count FROM messages
     WHERE recipient_id = ? AND read_at IS NULL
 ");
 $messages_query->bind_param("i", $lecturer_id);
@@ -184,25 +169,39 @@ $messages_count = $messages_query->get_result()->fetch_assoc()['count'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lecturer Dashboard - MyCamp Portal</title>
-    
+
     <!-- Local Tailwind CSS -->
     <script src="../javascript/tailwindcss.js"></script>
-    
+
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Chart.js for analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-  
+
+    <style>
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 250px;
+            }
+        }
+    </style>
 </head>
+
 <body class="bg-gray-100 min-h-screen flex">
     <!-- Sidebar -->
-    <?php include 'sidebar.php'?>
+    <?php include 'components/sidebar.php' ?>
 
     <!-- Main Content -->
     <div class="main-content flex-1 overflow-hidden">
@@ -300,7 +299,7 @@ $messages_count = $messages_query->get_result()->fetch_assoc()['count'];
                         <div class="space-y-4">
                             <?php if (count($today_classes) > 0): ?>
                                 <?php foreach ($today_classes as $class): ?>
-                                    <?php 
+                                    <?php
                                     $schedule = json_decode($class['schedule'], true);
                                     $start_time = isset($schedule['start_time']) ? date('g:i A', strtotime($schedule['start_time'])) : 'TBA';
                                     ?>
@@ -364,7 +363,9 @@ $messages_count = $messages_query->get_result()->fetch_assoc()['count'];
                         <h2 class="text-xl font-bold text-gray-800">Assignment Status</h2>
                         <a href="assignments.php" class="text-blue-600 hover:text-blue-800 text-sm">View All</a>
                     </div>
-                    <canvas id="assignmentChart" height="250"></canvas>
+                    <div class="chart-container">
+                        <canvas id="assignmentChart"></canvas>
+                    </div>
                 </div>
 
                 <!-- Course Performance -->
@@ -373,7 +374,9 @@ $messages_count = $messages_query->get_result()->fetch_assoc()['count'];
                         <h2 class="text-xl font-bold text-gray-800">Course Performance</h2>
                         <a href="grades.php" class="text-blue-600 hover:text-blue-800 text-sm">View Details</a>
                     </div>
-                    <canvas id="performanceChart" height="250"></canvas>
+                    <div class="chart-container">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
                 </div>
             </div>
 
@@ -385,12 +388,12 @@ $messages_count = $messages_query->get_result()->fetch_assoc()['count'];
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <?php if (count($courses) > 0): ?>
-                        <?php 
+                        <?php
                         $colors = ['blue', 'green', 'purple', 'yellow', 'indigo', 'pink'];
                         $color_index = 0;
                         ?>
                         <?php foreach ($courses as $course): ?>
-                            <?php 
+                            <?php
                             $color = $colors[$color_index % count($colors)];
                             $color_index++;
                             ?>
@@ -437,74 +440,78 @@ $messages_count = $messages_query->get_result()->fetch_assoc()['count'];
             document.querySelector('.main-content').classList.toggle('active');
         });
 
-        // Assignment Status Chart
-        const assignmentCtx = document.getElementById('assignmentChart').getContext('2d');
-        const assignmentChart = new Chart(assignmentCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Graded', 'Submitted', 'Not Submitted', 'Late'],
-                datasets: [{
-                    data: [
-                        <?php echo $assignment_status['graded']; ?>,
-                        <?php echo $assignment_status['submitted']; ?>,
-                        <?php echo $assignment_status['not_submitted']; ?>,
-                        <?php echo $assignment_status['late']; ?>
-                    ],
-                    backgroundColor: [
-                        '#10B981',
-                        '#3B82F6',
-                        '#9CA3AF',
-                        '#EF4444'
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-
-        // Course Performance Chart
-        const performanceCtx = document.getElementById('performanceChart').getContext('2d');
-        const performanceChart = new Chart(performanceCtx, {
-            type: 'bar',
-            data: {
-                labels: <?php echo json_encode($performance_labels); ?>,
-                datasets: [{
-                    label: 'Average Grade',
-                    data: <?php echo json_encode($performance_data); ?>,
-                    backgroundColor: '#3B82F6',
-                    borderWidth: 0,
-                    borderRadius: 5
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        ticks: {
-                            callback: function(value) {
-                                return value + '%';
-                            }
+        // Wait for charts to be rendered
+        document.addEventListener('DOMContentLoaded', function() {
+            // Assignment Status Chart
+            const assignmentCtx = document.getElementById('assignmentChart').getContext('2d');
+            const assignmentChart = new Chart(assignmentCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Graded', 'Submitted', 'Not Submitted', 'Late'],
+                    datasets: [{
+                        data: [
+                            <?php echo $assignment_status['graded']; ?>,
+                            <?php echo $assignment_status['submitted']; ?>,
+                            <?php echo $assignment_status['not_submitted']; ?>,
+                            <?php echo $assignment_status['late']; ?>
+                        ],
+                        backgroundColor: [
+                            '#10B981',
+                            '#3B82F6',
+                            '#9CA3AF',
+                            '#EF4444'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
                         }
                     }
+                }
+            });
+
+            // Course Performance Chart
+            const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+            const performanceChart = new Chart(performanceCtx, {
+                type: 'bar',
+                data: {
+                    labels: <?php echo json_encode($performance_labels); ?>,
+                    datasets: [{
+                        label: 'Average Grade',
+                        data: <?php echo json_encode($performance_data); ?>,
+                        backgroundColor: '#3B82F6',
+                        borderWidth: 0,
+                        borderRadius: 5
+                    }]
                 },
-                plugins: {
-                    legend: {
-                        display: false
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
                     }
                 }
-            }
+            });
         });
     </script>
 </body>
+
 </html>

@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $weight = floatval($_POST['weight']);
         $instructions = trim($_POST['instructions']);
         $status = $_POST['status'];
-        
+
         if (empty($title) || empty($due_date) || $max_score <= 0 || $weight <= 0) {
             $error = 'Title, due date, max score, and weight are required.';
         } else {
@@ -45,25 +45,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!is_dir($upload_dir)) {
                     mkdir($upload_dir, 0777, true);
                 }
-                
+
                 $file_ext = pathinfo($_FILES['attachment']['name'], PATHINFO_EXTENSION);
                 $file_name = 'assignment_' . time() . '_' . uniqid() . '.' . $file_ext;
                 $file_path = $upload_dir . $file_name;
-                
+
                 if (move_uploaded_file($_FILES['attachment']['tmp_name'], $file_path)) {
                     $attachment = $file_name;
                 } else {
                     $error = 'Failed to upload attachment.';
                 }
             }
-            
+
             if (!$error) {
                 $stmt = $conn->prepare("
                     INSERT INTO assignments (class_id, title, description, assignment_type, due_date, max_score, weight, instructions, attachment, status)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ");
                 $stmt->bind_param("issssdssss", $class_id, $title, $description, $assignment_type, $due_date, $max_score, $weight, $instructions, $attachment, $status);
-                
+
                 if ($stmt->execute()) {
                     $success = 'Assignment created successfully!';
                     // Log activity
@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $weight = floatval($_POST['weight']);
         $instructions = trim($_POST['instructions']);
         $status = $_POST['status'];
-        
+
         if (empty($title) || empty($due_date) || $max_score <= 0 || $weight <= 0) {
             $error = 'Title, due date, max score, and weight are required.';
         } else {
@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!is_dir($upload_dir)) {
                     mkdir($upload_dir, 0777, true);
                 }
-                
+
                 // Delete old file if exists
                 if ($attachment) {
                     $old_file = $upload_dir . $attachment;
@@ -103,18 +103,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         unlink($old_file);
                     }
                 }
-                
+
                 $file_ext = pathinfo($_FILES['attachment']['name'], PATHINFO_EXTENSION);
                 $file_name = 'assignment_' . time() . '_' . uniqid() . '.' . $file_ext;
                 $file_path = $upload_dir . $file_name;
-                
+
                 if (move_uploaded_file($_FILES['attachment']['tmp_name'], $file_path)) {
                     $attachment = $file_name;
                 } else {
                     $error = 'Failed to upload attachment.';
                 }
             }
-            
+
             if (!$error) {
                 $stmt = $conn->prepare("
                     UPDATE assignments 
@@ -122,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     WHERE id = ? AND class_id IN (SELECT id FROM classes WHERE lecturer_id = ?)
                 ");
                 $stmt->bind_param("ssssddsssii", $title, $description, $assignment_type, $due_date, $max_score, $weight, $instructions, $attachment, $status, $assignment_id, $lecturer_id);
-                
+
                 if ($stmt->execute()) {
                     $success = 'Assignment updated successfully!';
                     // Log activity
@@ -139,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Handle delete action
 if (isset($_GET['delete'])) {
     $assignment_id = intval($_GET['delete']);
-    
+
     // First get assignment details to delete attachment
     $get_stmt = $conn->prepare("
         SELECT attachment FROM assignments 
@@ -149,7 +149,7 @@ if (isset($_GET['delete'])) {
     $get_stmt->execute();
     $assignment = $get_stmt->get_result()->fetch_assoc();
     $get_stmt->close();
-    
+
     // Delete attachment file if exists
     if ($assignment && $assignment['attachment']) {
         $file_path = '../uploads/assignments/' . $assignment['attachment'];
@@ -157,14 +157,14 @@ if (isset($_GET['delete'])) {
             unlink($file_path);
         }
     }
-    
+
     // Delete assignment
     $stmt = $conn->prepare("
         DELETE FROM assignments 
         WHERE id = ? AND class_id IN (SELECT id FROM classes WHERE lecturer_id = ?)
     ");
     $stmt->bind_param("ii", $assignment_id, $lecturer_id);
-    
+
     if ($stmt->execute()) {
         $success = 'Assignment deleted successfully!';
         // Log activity
@@ -179,14 +179,14 @@ if (isset($_GET['delete'])) {
 if (isset($_GET['publish'])) {
     $assignment_id = intval($_GET['publish']);
     $status = $_GET['status'] === 'publish' ? 'published' : 'draft';
-    
+
     $stmt = $conn->prepare("
         UPDATE assignments 
         SET status = ?, updated_at = NOW()
         WHERE id = ? AND class_id IN (SELECT id FROM classes WHERE lecturer_id = ?)
     ");
     $stmt->bind_param("sii", $status, $assignment_id, $lecturer_id);
-    
+
     if ($stmt->execute()) {
         $action = $status === 'published' ? 'published' : 'unpublished';
         $success = "Assignment $action successfully!";
@@ -242,12 +242,13 @@ if (isset($_GET['edit'])) {
     $edit_stmt->close();
 }
 
-function logActivity($type, $description, $additional_data = null) {
+function logActivity($type, $description, $additional_data = null)
+{
     global $conn, $lecturer_id;
-    
+
     $ip_address = $_SERVER['REMOTE_ADDR'];
     $user_agent = $_SERVER['HTTP_USER_AGENT'];
-    
+
     $stmt = $conn->prepare("INSERT INTO activity_logs (user_id, activity_type, description, additional_data, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt->bind_param("isssss", $lecturer_id, $type, $description, $additional_data, $ip_address, $user_agent);
     $stmt->execute();
@@ -256,6 +257,7 @@ function logActivity($type, $description, $additional_data = null) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -267,14 +269,19 @@ function logActivity($type, $description, $additional_data = null) {
             font-family: 'Poppins';
             src: url('../assets/fonts/poppins.ttf') format('truetype');
         }
+
         * {
             font-family: 'Poppins', sans-serif;
         }
     </style>
 </head>
+
 <body class="bg-gray-100 min-h-screen flex ">
-      <?php include 'sidebar.php'?>
-      <!-- Main Content -->
+    <!-- Sidebar -->
+    <?php include 'components/sidebar.php' ?>
+
+    <!-- Main Content -->
+    <!-- Main Content -->
     <div class="main-content flex-1 overflow-hidden p-6">
         <!-- Header -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
@@ -442,14 +449,14 @@ function logActivity($type, $description, $additional_data = null) {
                         <input type="hidden" name="assignment_id" value="<?php echo $edit_assignment['id']; ?>">
                         <input type="hidden" name="existing_attachment" value="<?php echo htmlspecialchars($edit_assignment['attachment']); ?>">
                     <?php endif; ?>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Class *</label>
                             <select name="class_id" required class="w-full px-4 py-2 border border-gray-300 rounded-lg">
                                 <option value="">Select Class</option>
                                 <?php foreach ($classes as $class): ?>
-                                    <option value="<?php echo $class['id']; ?>" 
+                                    <option value="<?php echo $class['id']; ?>"
                                         <?php echo ($edit_assignment && $edit_assignment['class_id'] == $class['id']) ? 'selected' : ''; ?>>
                                         <?php echo htmlspecialchars($class['course_code'] . ' - ' . $class['class_code']); ?>
                                     </option>
@@ -457,22 +464,22 @@ function logActivity($type, $description, $additional_data = null) {
                             </select>
                         </div>
                     </div>
-                    
+
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Title *</label>
                         <input type="text" name="title" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                               value="<?php echo $edit_assignment ? htmlspecialchars($edit_assignment['title']) : ''; ?>"
-                               placeholder="Assignment title">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                            value="<?php echo $edit_assignment ? htmlspecialchars($edit_assignment['title']) : ''; ?>"
+                            placeholder="Assignment title">
                     </div>
-                    
+
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
                         <textarea name="description" rows="3"
-                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                                  placeholder="Assignment description"><?php echo $edit_assignment ? htmlspecialchars($edit_assignment['description']) : ''; ?></textarea>
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                            placeholder="Assignment description"><?php echo $edit_assignment ? htmlspecialchars($edit_assignment['description']) : ''; ?></textarea>
                     </div>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Assignment Type *</label>
@@ -493,42 +500,42 @@ function logActivity($type, $description, $additional_data = null) {
                             </select>
                         </div>
                     </div>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Due Date *</label>
                             <input type="datetime-local" name="due_date" required
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                                   value="<?php echo $edit_assignment ? date('Y-m-d\TH:i', strtotime($edit_assignment['due_date'])) : ''; ?>">
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                                value="<?php echo $edit_assignment ? date('Y-m-d\TH:i', strtotime($edit_assignment['due_date'])) : ''; ?>">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Max Score *</label>
                             <input type="number" name="max_score" required step="0.01" min="0"
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                                   value="<?php echo $edit_assignment ? $edit_assignment['max_score'] : ''; ?>"
-                                   placeholder="100">
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                                value="<?php echo $edit_assignment ? $edit_assignment['max_score'] : ''; ?>"
+                                placeholder="100">
                         </div>
                     </div>
-                    
+
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Weight (%) *</label>
                         <input type="number" name="weight" required step="0.01" min="0" max="100"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                               value="<?php echo $edit_assignment ? $edit_assignment['weight'] : ''; ?>"
-                               placeholder="20">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                            value="<?php echo $edit_assignment ? $edit_assignment['weight'] : ''; ?>"
+                            placeholder="20">
                     </div>
-                    
+
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Instructions</label>
                         <textarea name="instructions" rows="3"
-                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                                  placeholder="Assignment instructions"><?php echo $edit_assignment ? htmlspecialchars($edit_assignment['instructions']) : ''; ?></textarea>
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                            placeholder="Assignment instructions"><?php echo $edit_assignment ? htmlspecialchars($edit_assignment['instructions']) : ''; ?></textarea>
                     </div>
-                    
+
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Attachment</label>
                         <input type="file" name="attachment"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg">
                         <?php if ($edit_assignment && $edit_assignment['attachment']): ?>
                             <p class="text-sm text-gray-600 mt-2">
                                 Current file: <?php echo htmlspecialchars($edit_assignment['attachment']); ?>
@@ -538,7 +545,7 @@ function logActivity($type, $description, $additional_data = null) {
                             </p>
                         <?php endif; ?>
                     </div>
-                    
+
                     <div class="flex justify-end space-x-3">
                         <button type="button" onclick="closeModal()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg">
                             Cancel
@@ -556,21 +563,21 @@ function logActivity($type, $description, $additional_data = null) {
         function openCreateModal() {
             document.getElementById('assignmentModal').classList.remove('hidden');
         }
-        
+
         function closeModal() {
             document.getElementById('assignmentModal').classList.add('hidden');
             <?php if ($edit_assignment): ?>
                 window.location.href = 'assignments.php';
             <?php endif; ?>
         }
-        
+
         // Open modal if editing
         <?php if ($edit_assignment): ?>
             document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('assignmentModal').classList.remove('hidden');
             });
         <?php endif; ?>
-        
+
         // Close modal when clicking outside
         document.addEventListener('click', function(event) {
             const modal = document.getElementById('assignmentModal');
@@ -580,4 +587,5 @@ function logActivity($type, $description, $additional_data = null) {
         });
     </script>
 </body>
+
 </html>
